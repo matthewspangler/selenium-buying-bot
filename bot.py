@@ -9,6 +9,7 @@ import random
 class Bot():
     def __init__(self, driver):
         self.driver = driver
+        self.url = ""
         self.out_of_stock_element = (By.ID, "")
         self.in_stock_element = (By.ID, "")
 
@@ -22,19 +23,6 @@ class Bot():
         except Exception as exception_message:
             print("URL could not be opened. Exception: %s" % exception_message)
 
-    # Checks if an item is out of stock, returns True if so
-    def check_out_of_stock(self, url):
-        if not url == self.driver.current_url:
-            self.__goto_page(url)
-
-        try:
-            self.driver.find_element(*self.out_of_stock_element)
-            print("Item is not available for purchase.")
-            return True
-        except Exception as exception_message:
-            print("Could not find element. Exception: %s" % exception_message)
-            return False
-
     # Checks if an item is in stock, returns True if so
     def check_in_stock(self, url):
         if not url == self.driver.current_url:
@@ -45,45 +33,37 @@ class Bot():
             print("Item is available for purchase.")
             return True
         except Exception as exception_message:
-            print("Could not find element. Exception: %s" % exception_message)
+            print("Could . Exception: %s" % exception_message)
             return False
 
     # Continuously refreshes page until an item is available
-    def wait_availability(self, url, refresh_time):
-        while not self.check_in_stock(url):
+    def wait_availability(self):
+        while not self.check_in_stock(self.url):
+            refresh_time = self.random_refresh_sleep()
             print("Item isn't available. Refreshing in %s..." % refresh_time)
             time.sleep(refresh_time)
             self.driver.navigate().refresh()
 
     def do_checkout(self):
         # Check for purchase failsafe, skips purchase button @ end
-        try:
-            pass
-        except Exception as ex:
-            pass
+        pass
 
-    def is_login(self):
+
+    def is_signed_in(self):
         return False
 
-    def do_login(self):
+    def sign_in(self):
+        if self.is_signed_in == False:
+            # do sign in
+            pass
         pass
 
     def get_price(self):
-        try:
-            price_element = self.driver.find_element(By.CLASS_NAME,
+        price_element = self.driver.find_element(By.CLASS_NAME,
                                                  "price-characteristic")
-            price = price_element.get_attribute("content")
-            print("Product price: %s" % price)
-            return price
-        except Exception as exception_message:
-            print("Failed to get price. Exception: %s" % exception_message)
-
-
-    def click_button(self, element):
-        try:
-            self.driver.find_element(element).click()
-        except Exception as exception_message:
-            print("Could not click button. Exception: %s" % exception_message)
+        price = price_element.get_attribute("content")
+        print("Product price: %s" % price)
+        return price
 
     def enter_data(self):
         pass
@@ -100,22 +80,46 @@ class Bot():
               message)
         server.quit()
 
+    ## "Turing test" functions--to prevent websites from detecting the bot 
+
     # I'm randomizing the time before refreshes just in case the servers
     #  can predict a bot based on consistent timing between refreshes
     def random_refresh_sleep(self, seconds_range=[1*60,3*60]):
         return random.randint(*seconds_range)
 
-    def run(self, url):
-        self.wait_availability(url, self.random_refresh_sleep)
-        #self.send_email_notification("Product available!")
+    # Check if google's recaptcha popped up.
+    def recaptcha_check(self):
+        pass
 
-        self.get_price()
+    # Function wrapper for each step, to log and check for problems
+    def do_step(self, step_func):
+        # check url is correct
+        # check captcha
+        # check 404
+        # try except
+        try:
+            step_func()
+        except Exception as exception_message:
+            print("Function %s failed! Exception: %s" % (step_func.__name__,
+                                                         exception_message))
+
+        # log results
+
+    def run(self, url):
+        # Set url
+        self.url = url
+
+        # Wait for product to become available
+        self.do_step(self.wait_availability)
+
+        # Check price
+        self.do_step(self.get_price)
 
         # Ensure we're signed in so we can go through checkout!
-        if not self.is_login():
-            self.do_login()
+        self.do_step(self.sign_in)
 
-        self.do_checkout()
-        #self.send_email_notification("Product purchased!")
+        # Run through checkout for product
+        self.do_step(self.do_checkout)
+
 
 
