@@ -1,2 +1,2 @@
 # selenium-buying-bot
-A Selenium bot that makes purchases for you when an item becomes available on an online store, such as Walmart or Amazon.
+A Selenium bot that waits for products to be available in online stores such as Walmart, and then purchases them for you.
