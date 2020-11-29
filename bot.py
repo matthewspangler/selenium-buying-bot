@@ -1,5 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from functools import partial
 import time
 from constants import email_notification
 import smtplib
@@ -87,8 +88,16 @@ class Bot():
     def random_refresh_sleep(self, seconds_range=[1*60,3*60]):
         return random.randint(*seconds_range)
 
+    # I don't actually know if we'll need this:
+    def random_click_sleep(self, seconds_range=[1,4]):
+        return random.randint(*seconds_range)
+
     # Check if google's recaptcha popped up.
     def recaptcha_check(self):
+        pass
+
+    # Yeah, this one will be a freaking mess:
+    def do_recaptcha(self):
         pass
 
     # Function wrapper for each step, to log and check for problems
@@ -98,7 +107,7 @@ class Bot():
         # check 404
         # try except
         try:
-            step_func()
+            return step_func()
         except Exception as exception_message:
             print("Function %s failed! Exception: %s" % (step_func.__name__,
                                                          exception_message))
@@ -108,6 +117,9 @@ class Bot():
     def run(self, url):
         # Set url
         self.url = url
+
+        # How to pass arguments with do_step:
+        # self.do_step(partial(function, param1, param2)
 
         # Wait for product to become available
         self.do_step(self.wait_availability)
@@ -120,6 +132,4 @@ class Bot():
 
         # Run through checkout for product
         self.do_step(self.do_checkout)
-
-
 
