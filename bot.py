@@ -2,15 +2,15 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from functools import partial
 import time
-from constants import email_notification
+#from constants import email_notification
 import smtplib
 from email.message import EmailMessage
 import random
 
 class Bot():
-    def __init__(self, driver):
+    def __init__(self, driver, url=""):
         self.driver = driver
-        self.url = ""
+        self.url = url
         self.out_of_stock_element = (By.ID, "")
         self.in_stock_element = (By.ID, "")
 
@@ -72,14 +72,15 @@ class Bot():
     def is_404(self):
         pass
 
-    def send_email_notification(self, message):
-        server = smtplib.SMTP_SSL(*EMAIL_SERVER)
-        server.login(*EMAIL_LOGIN)
-        server.sendmail(
-              EMAIL_LOGIN[0],
-              DESTINATION_EMAIL,
-              message)
-        server.quit()
+
+    #def send_email_notification(self, message):
+    #    server = smtplib.SMTP_SSL(*EMAIL_SERVER)
+    #    server.login(*EMAIL_LOGIN)
+    #    server.sendmail(
+    #          EMAIL_LOGIN[0],
+    #          DESTINATION_EMAIL,
+    #          message)
+    #    server.quit()"""
 
     ## "Turing test" functions--to prevent websites from detecting the bot 
 
@@ -90,29 +91,52 @@ class Bot():
 
     # I don't actually know if we'll need this:
     def random_click_sleep(self, seconds_range=[1,4]):
+        # TODO: make this return a decimal value instead of an int.
         return random.randint(*seconds_range)
 
     # Check if google's recaptcha popped up.
     def recaptcha_check(self):
-        pass
+        # Page recaptcha:
+        if "www.walmart.com/blocked" in self.driver.current_url:
+            return true
+        # Embedded recaptcha
+        else:
+            # iframe src="https://www.google.com/recaptcha
+            try:
+                self.driver.find_element_by_xpath(
+                    "//iframe[contains(@src, 'https://www.google.com/recaptcha')]")
+                return True
+            except:
+                return False
+        return False
+
+    # Wait for human to process recaptcha:
+    def recaptcha_wait(self):
+        while self.recaptcha_check == True:
+            time.sleep(10)
+            print("Stuck in reCaptcha")
+
 
     # Yeah, this one will be a freaking mess:
     def do_recaptcha(self):
         pass
 
     # Function wrapper for each step, to log and check for problems
-    def do_step(self, step_func):
-        # check url is correct
-        # check captcha
-        # check 404
-        # try except
-        try:
-            return step_func()
-        except Exception as exception_message:
-            print("Function %s failed! Exception: %s" % (step_func.__name__,
-                                                         exception_message))
+    def do_step(self, step_func, attempts=10):
+        # check for 404 and other error pages.
+        # To avoid detection, have a max number of refreshes.
 
-        # log results
+        # Putting steps inside for loop ensures the bot keeps trying
+        for attempt in range(attempts):
+            try:
+            # Has difficulty when url not set, near beginning of run():
+                self.recaptcha_wait()
+                return step_func()
+            except Exception as exception_message:
+                print("Function %s failed! %s" % (step_func.__name__,
+                                                  exception_message))
+                print("Attempt #%s" % attempt)
+                time.sleep(self.random_click_sleep())
 
     def run(self, url):
         # Set url
