@@ -27,7 +27,7 @@ class WalmartBot(Bot):
         self.driver.find_element_by_id("password").clear()
         self.driver.find_element_by_id("password").send_keys(profile["password"])
         self.driver.find_element_by_id("sign-in-widget").click()
-        self.driver.find_element_by_xpath("//button[@type='submit']").click()
+        #self.driver.find_element_by_xpath("//button[@type='submit']").click()
 
     def do_checkout(self):
         profile = self.profile
@@ -38,6 +38,7 @@ class WalmartBot(Bot):
         # data-tl-id="IPPacCheckOutBtnBottom"
         self.driver.find_element_by_xpath("//div[3]/button/span").click()
 
+        self.driver.find_element_by_xpath("//div[3]/div/div/div[2]/button/span").click()
         self.enter_shipping_info()
 
     def enter_shipping_info(self):

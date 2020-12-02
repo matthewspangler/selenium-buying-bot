@@ -14,8 +14,6 @@ options.binary_location = "./chrome-linux/chrome"
 # https://chromium.woolyss.com/#linux
 
 if __name__ == "__main__":
-    # Change the following variable to your version of Chromium:
-    uc.TARGET_VERSION = 87
     # Create instance of webdriver
     bot_driver = uc.Chrome(chrome_options=options)
     # Create instance of bot

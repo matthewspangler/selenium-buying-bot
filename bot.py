@@ -98,13 +98,13 @@ class Bot():
     def recaptcha_check(self):
         # Page recaptcha:
         if "www.walmart.com/blocked" in self.driver.current_url:
-            return true
+            return True
         # Embedded recaptcha
         else:
             # iframe src="https://www.google.com/recaptcha
             try:
                 self.driver.find_element_by_xpath(
-                    "//iframe[contains(@src, 'https://www.google.com/recaptcha')]")
+                    "//*[contains(@class, 're-captcha')]")
                 return True
             except:
                 return False
@@ -112,48 +112,52 @@ class Bot():
 
     # Wait for human to process recaptcha:
     def recaptcha_wait(self):
-        while self.recaptcha_check == True:
+        while self.recaptcha_check() == True:
             time.sleep(10)
-            print("Stuck in reCaptcha")
+            print("Stuck in reCaptcha.")
 
 
     # Yeah, this one will be a freaking mess:
     def do_recaptcha(self):
         pass
 
-    # Function wrapper for each step, to log and check for problems
-    def do_step(self, step_func, attempts=10):
-        # check for 404 and other error pages.
-        # To avoid detection, have a max number of refreshes.
-
-        # Putting steps inside for loop ensures the bot keeps trying
-        for attempt in range(attempts):
-            try:
-            # Has difficulty when url not set, near beginning of run():
-                self.recaptcha_wait()
-                return step_func()
-            except Exception as exception_message:
-                print("Function %s failed! %s" % (step_func.__name__,
-                                                  exception_message))
-                print("Attempt #%s" % attempt)
+    # Keeps attempting a funtion a predefined number of times until success
+    def log_and_retry(self, func, attempts=10):
+        def func_wrapper(*args, **kwargs):
+            for attempt in range(attempts):
                 time.sleep(self.random_click_sleep())
+                try:
+                    self.recaptcha_wait()
+                    return func(*args, **kwargs)
+                except Exception as exception_message:
+                    print("Function %s failed! Attempt #%s. Exception: %s" %
+                          (func.__name__, exception_message))
+        return func_wrapper
 
     def run(self, url):
+        # Add log and retry function wrapper to selenium functions
+        self.driver.find_element = self.log_and_retry(self.driver.find_element)
+        self.driver.find_element_by_id = self.log_and_retry(
+            self.driver.find_element_by_id)
+        self.driver.find_element_by_xpath = self.log_and_retry(
+            self.driver.find_element_by_xpath)
+
         # Set url
         self.url = url
+        self.__goto_page(self.url)
 
         # How to pass arguments with do_step:
         # self.do_step(partial(function, param1, param2)
 
         # Wait for product to become available
-        self.do_step(self.wait_availability)
+        self.wait_availability()
 
         # Check price
-        self.do_step(self.get_price)
+        self.get_price()
 
         # Ensure we're signed in so we can go through checkout!
-        self.do_step(self.sign_in)
+        self.sign_in()
 
         # Run through checkout for product
-        self.do_step(self.do_checkout)
+        self.do_checkout()
 
